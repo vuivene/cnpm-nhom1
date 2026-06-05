@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hóa Đơn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('bang_quan_tri') }}"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                <li><a href="{{ url_for('nhan_vien.danh_sach') }}"><i class="fa-solid fa-user-group"></i> Nhân sự</a>
+                </li>
+                <li><a href="{{ url_for('benh_nhan.danh_sach') }}"><i class="fa-solid fa-users"></i> Bệnh nhân & Bệnh
+                        án</a></li>
+                <li><a href="{{ url_for('dich_vu.danh_sach') }}"><i class="fa-solid fa-clipboard-list"></i> Dịch vụ</a>
+                </li>
+                <li><a href="{{ url_for('vat_tu.danh_sach') }}"><i class="fa-solid fa-box"></i> Vật tư</a></li>
+                <li><a href="{{ url_for('lich_lam_viec.danh_sach') }}"><i class="fa-regular fa-calendar-days"></i> Lịch
+                        làm việc</a></li>
+                <li><a href="{{ url_for('lich_hen.danh_sach') }}"><i class="fa-regular fa-calendar-check"></i> Lịch hẹn
+                        khám</a></li>
+                <li><a href="{{ url_for('hoa_don.danh_sach') }}" class="active"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa
+                        đơn</a></li>
+                <li><a href="{{ url_for('bao_cao.bao_cao_danh_sach') }}"><i class="fa-solid fa-chart-line"></i> Báo cáo
+                        & Thống kê</a></li>
+                <li><a href="{{ url_for('cai_dat.index') }}"><i class="fa-solid fa-gear"></i> Cài đặt</a></li>
+            </ul>
+            <div class="sidebar-bottom">
+                <a href="mailto:someone@example.com"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h2><i class="fa-solid fa-file-invoice-dollar"></i> QUẢN LÝ HÓA ĐƠN THANH TOÁN</h2>
+                <a href="{{ url_for('cai_dat.index') }}" style="text-decoration: none; color: #1b263b;">
+                    <div class="user-profile">
+                        {{ session['role'] }} <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; margin-left: 5px;"></i>
+                    </div>
+                </a>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                {% for msg in messages %}
+                <div
+                    style="background-color: #d4edda; color: #155724; padding: 12px; margin-bottom: 15px; border-radius: 6px;">
+                    <i class="fa-solid fa-circle-check"></i> {{ msg }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form id="filterForm" method="GET" action="{{ url_for('hoa_don.danh_sach') }}">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <button type="submit" style="background:none; border:none; cursor:pointer;"><i
+                                    class="fa-solid fa-magnifying-glass"></i></button>
+                            <input type="text" name="search" value="{{ search_query }}"
+                                placeholder="Tìm mã hóa đơn, tên bệnh nhân...">
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <span style="color: #666; font-size: 0.9rem;"><i class="fa-solid fa-filter"></i> Trạng
+                                thái:</span>
+                            <input type="hidden" name="trang_thai" id="trang_thai_input"
+                                value="{{ current_trang_thai }}">
+                            <button type="button"
+                                class="filter-pill {% if current_trang_thai == 'Tất cả' %}active{% endif %}"
+                                onclick="setFilter('Tất cả')">Tất cả</button>
+                            <button type="button"
+                                class="filter-pill {% if current_trang_thai == 'Đã thanh toán' %}active{% endif %}"
+                                onclick="setFilter('Đã thanh toán')">Đã thanh toán</button>
+                            <button type="button"
+                                class="filter-pill {% if current_trang_thai == 'Chưa thanh toán' %}active{% endif %}"
+                                onclick="setFilter('Chưa thanh toán')">Chưa thanh toán</button>
+                        </div>
+                        <div class="filter-group">
+                            <span style="color: #666; font-size: 0.9rem;">Lọc theo tháng:</span>
+                            <input type="month" name="thang" value="{{ current_thang }}"
+                                onchange="document.getElementById('filterForm').submit()"
+                                style="padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none;">
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Bệnh Nhân</th>
+                                <th>Ngày Lập</th>
+                                <th>Tổng Tiền</th>
+                                <th>Trạng Thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hd in hoa_don %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ hd.MaHoaDon }}</td>
+                                <td>{{ hd.TenBenhNhan }}</td>
+                                <td>{{ hd.NgayLap.strftime('%d/%m/%Y') }}</td>
+                                <td style="font-weight: 600; color: #1b263b;">{{ "{:,.0f}".format(hd.TongTien) }} ₫</td>
+                                <td>
+                                    {% if hd.TrangThai == 'Đã thanh toán' %}
+                                    <span class="badge badge-working">Đã thanh toán</span>
+                                    {% else %}
+                                    <span class="badge badge-leave"
+                                        style="background-color: #f8d7da; color: #721c24;">Chưa thanh toán</span>
+                                    {% endif %}
+                                </td>
+                                <td class="action-btns">
+                                    <a href="{{ url_for('hoa_don.form_hoa_don', id=hd.MaHoaDon, action='view') }}">
+                                        <button title="Xem chi tiết"><i class="fa-regular fa-eye"></i></button>
+                                    </a>
+
+                                    {% if hd.TrangThai == 'Chưa thanh toán' %}
+                                    <a href="{{ url_for('hoa_don.form_hoa_don', id=hd.MaHoaDon, action='edit') }}">
+                                        <button title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+                                    </a>
+                                    {% endif %}
+
+                                    {% if hd.TrangThai == 'Chưa thanh toán' %}
+                                    <a href="{{ url_for('hoa_don.xac_nhan', id=hd.MaHoaDon) }}"
+                                        onclick="return confirm('Xác nhận đã thu tiền hóa đơn {{ hd.MaHoaDon }}?');">
+                                        <button title="Xác nhận thanh toán" style="color: #2ecc71;"><i
+                                                class="fa-solid fa-check-double"></i></button>
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('hoa_don.in_hoa_don', id=hd.MaHoaDon) }}">
+                                        <button title="In hóa đơn"><i class="fa-solid fa-print"></i></button>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function setFilter(val) {
+            document.getElementById('trang_thai_input').value = val;
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+</body>
+
+</html>

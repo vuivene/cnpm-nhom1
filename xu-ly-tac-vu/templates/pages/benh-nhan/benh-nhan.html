@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bệnh nhân & Bệnh án</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .action-btns a {
+            color: inherit;
+            margin: 0 3px;
+            text-decoration: none;
+        }
+
+        .toolbar button a {
+            color: #fff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('bang_quan_tri') }}"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                <li><a href="{{ url_for('nhan_vien.danh_sach') }}"><i class="fa-solid fa-user-group"></i> Nhân sự</a></li>
+                <li><a href="{{ url_for('benh_nhan.danh_sach') }}"><i class="fa-solid fa-users"></i> Bệnh nhân & Bệnh án</a></li>
+                <li><a href="{{ url_for('dich_vu.danh_sach') }}"><i class="fa-solid fa-clipboard-list"></i> Dịch vụ</a></li>
+                <li><a href="{{ url_for('vat_tu.danh_sach') }}"><i class="fa-solid fa-box"></i> Vật tư</a></li>
+                <li><a href="{{ url_for('lich_lam_viec.danh_sach') }}"><i class="fa-regular fa-calendar-days"></i> Lịch làm việc</a></li>
+                <li><a href="{{ url_for('lich_hen.danh_sach') }}"><i class="fa-regular fa-calendar-check"></i> Lịch hẹn khám</a></li>
+                <li><a href="{{ url_for('hoa_don.danh_sach') }}"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn</a></li>
+                <li><a href="{{ url_for('bao_cao.bao_cao_danh_sach') }}"><i class="fa-solid fa-chart-line"></i> Báo cáo & Thống kê</a></li>
+                <li><a href="{{ url_for('cai_dat.index') }}"><i class="fa-solid fa-gear"></i> Cài đặt</a></li>
+            </ul>
+            <div class="sidebar-bottom">
+                <a href="mailto:someone@example.com"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h2><i class="fa-solid fa-users"></i> QUẢN LÝ BỆNH NHÂN & BỆNH ÁN</h2>
+                <a href="{{ url_for('cai_dat.index') }}" style="text-decoration: none; color: #1b263b;">
+                    <div class="user-profile">
+                        {{ session['role'] }} <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; margin-left: 5px;"></i>
+                    </div>
+                </a>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                {% for msg in messages %}
+                <div style="background-color: #d4edda; color: #155724; padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9rem;">
+                    <i class="fa-solid fa-circle-check"></i> {{ msg }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form id="filterForm" method="GET" action="{{ url_for('benh_nhan.danh_sach') }}">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <button type="submit" style="background:none; border:none; color:#666; cursor:pointer;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                            <input type="text" name="search" value="{{ search_query }}" placeholder="Tìm theo tên, SĐT hoặc Mã BN...">
+                        </div>
+                        <button type="button" class="btn-add">
+                            <i class="fa-solid fa-plus"></i>
+                            <a href="{{ url_for('benh_nhan.form_benh_nhan', action='add') }}"> Thêm bệnh nhân</a>
+                        </button>
+                    </div>
+
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <span style="color: #666; font-size: 0.9rem;"><i class="fa-solid fa-filter"></i> Bộ lọc:</span>
+                            <input type="hidden" name="trang_thai" id="trang_thai_input" value="{{ current_trang_thai }}">
+
+                            <button type="button" class="filter-pill {% if current_trang_thai == 'Tất cả' %}active{% endif %}" onclick="setFilter('Tất cả')">Tất cả</button>
+                            <button type="button" class="filter-pill {% if current_trang_thai == 'Đang điều trị' %}active{% endif %}" onclick="setFilter('Đang điều trị')">Đang điều trị</button>
+                            <button type="button" class="filter-pill {% if current_trang_thai == 'Đã hoàn thành' %}active{% endif %}" onclick="setFilter('Đã hoàn thành')">Đã hoàn thành</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã BN</th>
+                                <th>Họ và tên</th>
+                                <th>Số điện thoại</th>
+                                <th>Tiền sử bệnh</th>
+                                <th>Bệnh án gần nhất</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if benh_nhan %}
+                            {% for bn in benh_nhan %}
+                            <tr>
+                                <td>{{ bn.MaBenhNhan }}</td>
+                                <td><strong>{{ bn.HoTen }}</strong></td>
+                                <td>{{ bn.SoDienThoai }}</td>
+                                <td>{{ bn.TienSuYKhoa if bn.TienSuYKhoa else 'Không' }}</td>
+                                <td>
+                                    {% if bn.MaBenhAn %}
+                                    {{ bn.MaBenhAn }} ({{ bn.ChanDoan }})
+                                    {% else %}
+                                    <span style="color:#aaa; font-style:italic;">Chưa có bệnh án</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if bn.TrangThai == 'Đã hoàn thành' %}
+                                    <span class="badge badge-working">Hoàn thành</span>
+                                    {% elif bn.TrangThai == 'Đang điều trị' %}
+                                    <span class="badge badge-leave" style="background-color: #fff3cd; color: #856404;">Đang điều trị</span>
+                                    {% else %}
+                                    <span class="badge" style="background-color: #e9ecef; color: #6c757d;">Mới tạo</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="action-btns">
+                                    <a href="{{ url_for('benh_nhan.form_benh_nhan', action='view', id=bn.MaBenhNhan) }}">
+                                        <button title="Xem chi tiết"><i class="fa-regular fa-eye"></i></button>
+                                    </a>
+                                    <a href="{{ url_for('benh_nhan.form_benh_nhan', action='edit', id=bn.MaBenhNhan) }}">
+                                        <button title="Cập nhật"><i class="fa-solid fa-pen"></i></button>
+                                    </a>
+                                    <a href="{{ url_for('hoa_don.quan_ly_don_thuoc', ma_bn=bn.MaBenhNhan) }}">
+                                        <button title="Kê đơn thuốc" style="color:#8e44ad;"><i class="fa-solid fa-file-prescription"></i></button>
+                                    </a>
+                                    <a href="{{ url_for('benh_nhan.xoa_benh_nhan', id=bn.MaBenhNhan) }}" onclick="return confirm('Xóa bệnh nhân {{ bn.MaBenhNhan }} sẽ xóa sạch mọi bệnh án đi kèm?');">
+                                        <button style="color:#e74c3c;"><i class="fa-solid fa-trash"></i></button>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px; color:#888;">Không tìm thấy bệnh nhân nào.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script>
+        document.getElementById('trang_thai_input').value = val;
+        function setFilter(val) {
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+</body>
+
+</html>
