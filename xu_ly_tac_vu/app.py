@@ -65,7 +65,7 @@ def login():
         cursor = conn.cursor(dictionary=True)
         
         # GIẢI PHÁP AN TOÀN: Chỉ lọc theo TenDangNhap, không đối chiếu chuỗi mật khẩu thô bằng lệnh SQL
-        query = "SELECT * FROM taikhoan WHERE TenDangNhap = %s"
+        query = "SELECT * FROM TaiKhoan WHERE TenDangNhap = %s"
         cursor.execute(query, (_username,))
         account = cursor.fetchone()
 
