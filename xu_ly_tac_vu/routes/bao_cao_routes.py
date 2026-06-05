@@ -10,11 +10,11 @@ bao_cao_bp = Blueprint('bao_cao', __name__)
 def get_db_connection():
     # Tự động nhận diện cấu hình Railway, nếu chạy Local sẽ dùng giá trị mặc định ở vế sau
     return mysql.connector.connect(
-        host=os.environ.get('DB_HOST', 'localhost'),
-        user=os.environ.get('DB_USER', 'root'),
-        password=os.environ.get('DB_PASSWORD', ''),
-        port=int(os.environ.get('DB_PORT', 3306)),
-        database=os.environ.get('DB_NAME', 'QuanLyPhongKhamNhaKhoa')
+        host=os.environ.get('MYSQLHOST'),
+        user=os.environ.get('MYSQLUSER'),
+        password=os.environ.get('MYSQLPASSWORD'),
+        database=os.environ.get('MYSQLDATABASE'),
+        port=os.environ.get('MYSQLPORT')
     )
 
 @bao_cao_bp.route('/bao-cao', methods=['GET'])
