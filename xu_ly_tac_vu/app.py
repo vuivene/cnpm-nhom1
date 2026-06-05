@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 # Import thêm hàm chuyên dụng check_password_hash để bóc tách Salt và đối chiếu mật khẩu băm
 from werkzeug.security import check_password_hash
