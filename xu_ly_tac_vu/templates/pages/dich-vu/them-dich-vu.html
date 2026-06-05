@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thao tác Dịch vụ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Định dạng danh sách lỗi bên trong Popup giống ảnh mẫu */
+        .swal-error-list {
+            text-align: left !important;
+            margin-top: 15px;
+            padding-left: 20px;
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.6;
+        }
+        .swal-error-list li {
+            list-style-type: disc !important;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('bang_quan_tri') }}"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                <li><a href="{{ url_for('nhan_vien.danh_sach') }}"><i class="fa-solid fa-user-group"></i> Nhân sự</a></li>
+                <li><a href="{{ url_for('benh_nhan.danh_sach') }}"><i class="fa-solid fa-users"></i> Bệnh nhân & Bệnh án</a></li>
+                <li><a href="{{ url_for('dich_vu.danh_sach') }}"><i class="fa-solid fa-clipboard-list"></i> Dịch vụ</a></li>
+                <li><a href="{{ url_for('vat_tu.danh_sach') }}"><i class="fa-solid fa-box"></i> Vật tư</a></li>
+                <li><a href="{{ url_for('lich_lam_viec.danh_sach') }}"><i class="fa-regular fa-calendar-days"></i> Lịch làm việc</a></li>
+                <li><a href="{{ url_for('lich_hen.danh_sach') }}"><i class="fa-regular fa-calendar-check"></i> Lịch hẹn khám</a></li>
+                <li><a href="{{ url_for('hoa_don.danh_sach') }}"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn</a></li>
+                <li><a href="{{ url_for('bao_cao.bao_cao_danh_sach') }}"><i class="fa-solid fa-chart-line"></i> Báo cáo & Thống kê</a></li>
+                <li><a href="{{ url_for('cai_dat.index') }}"><i class="fa-solid fa-gear"></i> Cài đặt</a></li>
+            </ul>
+            <div class="sidebar-bottom">
+                <a href="mailto:someone@example.com"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-header">
+                <h2>
+                    {% if action == 'add' %}<i class="fa-solid fa-plus"></i> THÊM MỚI DỊCH VỤ KHÁM
+                    {% elif action == 'edit' %}<i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT THÔNG TIN DỊCH VỤ
+                    {% else %}<i class="fa-solid fa-eye"></i> CHI TIẾT DANH MỤC DỊCH VỤ
+                    {% endif %}
+                </h2>
+                <a href="{{ url_for('cai_dat.index') }}" style="text-decoration: none; color: #1b263b;">
+                    <div class="user-profile">
+                        {{ session['role'] }} <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; margin-left: 5px;"></i>
+                    </div>
+                </a>
+            </div>
+
+            <div class="content-body">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <span class="filter-pill"><a href="{{ url_for('dich_vu.danh_sach') }}" style="color: #444;"><i class="fa-solid fa-arrow-left"></i> Quay lại</a></span>
+                        <span class="filter-pill active"><a href="#">Thông tin</a></span>
+                    </div>
+                </div>
+
+                <div class="form-container" style="margin-bottom: 20px;">
+                    <form id="dichVuForm" action="{{ url_for('dich_vu.save_dich_vu') }}" method="POST" onsubmit="return validateDichVuForm(event)">
+                        <input type="hidden" name="action" value="{{ action }}">
+                        {% if data %}
+                            <input type="hidden" name="ma_dv" value="{{ data.MaDichVu }}">
+                        {% endif %}
+
+                        <h3 style="margin-bottom: 20px; color: #444; font-size: 1.1rem;">THÔNG TIN CHI TIẾT</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mã dịch vụ</label>
+                                <input type="text" value="{{ data.MaDichVu if data else 'Mã tự phát sinh!' }}" style="color: red; font-weight: 600;" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên dịch vụ *</label>
+                                <input type="text" id="ten_dv" name="ten_dv" value="{{ data.TenDichVu if data else '' }}" placeholder="Nhập tên dịch vụ y tế..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Đơn giá (VNĐ) *</label>
+                                <input type="number" id="don_gia" name="don_gia" value="{{ data.DonGia if data else '' }}" placeholder="Nhập đơn giá dịch vụ..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label>Tình trạng dịch vụ</label>
+                                <select name="tinh_trang" {% if action == 'view' %}disabled{% endif %}>
+                                    <option value="1" {% if data and data.TinhTrang == 1 %}selected{% endif %}>Đang hoạt động</option>
+                                    <option value="0" {% if data and data.TinhTrang == 0 %}selected{% endif %}>Ngừng cung cấp</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>Chi tiết dịch vụ</label>
+                                <textarea id="chi_tiet" name="chi_tiet" placeholder="Nhập mô tả chi tiết quy trình khám chữa bệnh..." rows="3" {% if action == 'view' %}readonly{% endif %}>{{ data.ChiTiet if data else '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            {% if action == 'add' %}
+                                <button type="submit" class="btn-submit" style="background-color: #2ecc71;">Thêm dịch vụ</button>
+                            {% elif action == 'edit' %}
+                                <button type="submit" class="btn-submit" style="background-color: #3498db;">Lưu thông tin</button>
+                            {% elif action == 'view' %}
+                                <a href="{{ url_for('dich_vu.form_dich_vu', action='edit', id=data.MaDichVu) }}" class="btn-submit" style="background-color: #e67e22; text-decoration: none; display: inline-block; text-align: center; padding: 10px 20px; color: white; border-radius: 4px;">Bạn có muốn sửa?</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function validateDichVuForm(event) {
+            var tenDv = document.getElementById("ten_dv").value.trim();
+            var donGia = document.getElementById("don_gia").value.trim();
+            var chiTiet = document.getElementById("chi_tiet").value.trim();
+
+            var errors = [];
+
+            // 1. Kiểm tra Tên dịch vụ
+            if (tenDv === "") {
+                errors.push("Tên dịch vụ không được phép để trống.");
+            } else if (tenDv.length > 150) {
+                errors.push("Tên dịch vụ vượt quá số lượng ký tự cho phép (Tối đa 150 ký tự).");
+            }
+
+            // 2. Kiểm tra Giá dịch vụ
+            if (donGia === "") {
+                errors.push("Đơn giá dịch vụ không được phép để trống.");
+            } else {
+                var giaNum = parseFloat(donGia);
+                if (isNaN(giaNum) || giaNum < 0) {
+                    errors.push("Đơn giá dịch vụ không được là số âm hoặc có định dạng không hợp lệ.");
+                }
+            }
+
+            // 3. Kiểm tra Chi tiết dịch vụ
+            if (chiTiet !== "" && chiTiet.length > 500) {
+                errors.push("Chi tiết dịch vụ vượt quá độ dài cho phép (Tối đa 500 ký tự).");
+            }
+
+            // Nếu phát hiện lỗi, chặn submit và xuất popup SweetAlert2 dạng bảng
+            if (errors.length > 0) {
+                event.preventDefault(); // Ngăn gửi form đi
+
+                var errorHtml = '<ul class="swal-error-list">';
+                errors.forEach(function (err) {
+                    errorHtml += '<li>' + err + '</li>';
+                });
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Vui lòng kiểm tra lại thông tin',
+                    html: errorHtml,
+                    confirmButtonColor: '#1b263b',
+                    confirmButtonText: 'Tôi đã hiểu'
+                });
+                return false;
+            }
+            return true;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+</body>
+</html>

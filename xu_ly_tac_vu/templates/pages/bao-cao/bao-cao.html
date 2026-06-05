@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Thống Kê</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .schedule-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .schedule-grid th,
+        .schedule-grid td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .schedule-grid th {
+            background-color: #1b263b;
+            color: white;
+        }
+
+        .status-da-lam {
+            background-color: #e0e0e0;
+            color: #555;
+            font-weight: bold;
+        }
+
+        /* Xám */
+        .status-co-lich {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        /* Xanh lá nhạt */
+        .status-nghi {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Đỏ nhạt */
+        .nv-info {
+            text-align: left !important;
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+
+        .chuc-vu {
+            display: block;
+            font-size: 0.8em;
+            color: #666;
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('bang_quan_tri') }}"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                <li><a href="{{ url_for('nhan_vien.danh_sach') }}"><i class="fa-solid fa-user-group"></i> Nhân sự</a>
+                </li>
+                <li><a href="{{ url_for('benh_nhan.danh_sach') }}"><i class="fa-solid fa-users"></i> Bệnh nhân & Bệnh
+                        án</a></li>
+                <li><a href="{{ url_for('dich_vu.danh_sach') }}"><i class="fa-solid fa-clipboard-list"></i> Dịch vụ</a>
+                </li>
+                <li><a href="{{ url_for('vat_tu.danh_sach') }}"><i class="fa-solid fa-box"></i> Vật tư</a></li>
+                <li><a href="{{ url_for('lich_lam_viec.danh_sach') }}"><i class="fa-regular fa-calendar-days"></i> Lịch
+                        làm việc</a></li>
+                <li><a href="{{ url_for('lich_hen.danh_sach') }}"><i class="fa-regular fa-calendar-check"></i> Lịch hẹn
+                        khám</a></li>
+                <li><a href="{{ url_for('hoa_don.danh_sach') }}"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa
+                        đơn</a></li>
+                <li><a href="{{ url_for('bao_cao.bao_cao_danh_sach') }}"><i class="fa-solid fa-chart-line"></i> Báo cáo
+                        & Thống kê</a></li>
+                <li><a href="{{ url_for('cai_dat.index') }}"><i class="fa-solid fa-gear"></i> Cài đặt</a></li>
+            </ul>
+            <div class="sidebar-bottom">
+                <a href="mailto:someone@example.com"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <h2><i class="fa-solid fa-chart-line"></i> BÁO CÁO & THỐNG KÊ DOANH THU</h2>
+                <a href="{{ url_for('cai_dat.index') }}" style="text-decoration: none; color: #1b263b;">
+                    <div class="user-profile">
+                        {{ session['role'] }} <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; margin-left: 5px;"></i>
+                    </div>
+                </a>
+            </header>
+
+            <div class="content-body">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
+                    <div
+                        style="background: white; padding: 25px; border-radius: 10px; border-left: 5px solid #1b263b; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <p style="color: #666; font-size: 0.9rem; font-weight: 600;">DOANH THU THÁNG</p>
+                        <h3 style="font-size: 1.8rem; margin-top: 10px; color: #1b263b;">{{
+                            "{:,.0f}".format(doanh_thu_thang) }} ₫</h3>
+                    </div>
+                    <div
+                        style="background: white; padding: 25px; border-radius: 10px; border-left: 5px solid #2ecc71; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <p style="color: #666; font-size: 0.9rem; font-weight: 600;">LƯỢT KHÁCH TRONG THÁNG</p>
+                        <h3 style="font-size: 1.8rem; margin-top: 10px; color: #1b263b;">{{ khach_moi }}</h3>
+                    </div>
+                    <div
+                        style="background: white; padding: 25px; border-radius: 10px; border-left: 5px solid #e74c3c; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                        <p style="color: #666; font-size: 0.9rem; font-weight: 600;">DỊCH VỤ PHỔ BIẾN</p>
+                        <h3 style="font-size: 1.8rem; margin-top: 10px; color: #1b263b;">{{ dich_vu_pho_bien }}</h3>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <form method="GET" action="{{ url_for('bao_cao.bao_cao_danh_sach') }}" class="search-box">
+                        <button type="submit"
+                            style="background:none; border:none; padding:0; margin:0; cursor:pointer;"><i
+                                class="fa-solid fa-magnifying-glass"></i></button>
+                        <input type="text" name="search" placeholder="Tìm kiếm báo cáo..."
+                            value="{{ request.args.get('search', '') }}">
+                    </form>
+                    <a href="{{ url_for('bao_cao.bao_cao_them') }}" class="btn-add"><i class="fa-solid fa-plus"></i>
+                        Thêm báo cáo</a>
+                </div>
+
+                <div class="table-container">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #1b263b; font-size: 1.1rem;">Lịch sử xuất báo cáo</h3>
+                        <a href="{{ url_for('bao_cao.bao_cao_xuat_excel') }}" class="btn-add"><i
+                                class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Excel</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã BC</th>
+                                <th>Loại Báo Cáo</th>
+                                <th>Thời Gian Khởi Tạo</th>
+                                <th>Tổng Doanh Thu</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bc in danh_sach %}
+                            <tr>
+                                <td>{{ bc.MaBaoCao }}</td>
+                                <td>{{ bc.LoaiBaoCao }}</td>
+                                <td>{{ bc.ThoiGianKhoiTao.strftime('%d/%m/%Y %H:%M') if bc.ThoiGianKhoiTao else '' }}
+                                </td>
+                                <td style="font-weight: 600; color: #2ecc71;">{{ "{:,.0f}".format(bc.TongDoanhThu) }} ₫
+                                </td>
+                                <td class="action-btns">
+                                    <a href="{{ url_for('bao_cao.bao_cao_xem', ma_bc=bc.MaBaoCao) }}"
+                                        title="Xem chi tiết">
+                                        <button title="Xem chi tiết"><i class="fa-regular fa-eye"></i></button>
+                                    </a>
+                                    <a href="{{ url_for('bao_cao.bao_cao_xuat_pdf', ma_bc=bc.MaBaoCao) }}"
+                                        title="Tải PDF">
+                                        
+                                        <button title="In"><i class="fa-solid fa-download"></i></button>
+                                    </a>
+                                    <form action="{{ url_for('bao_cao.bao_cao_xoa', ma_bc=bc.MaBaoCao) }}" method="POST"
+                                        style="display:inline;" onsubmit="return confirm('Xóa báo cáo này?');">
+                                        <button type="submit"
+                                            style="color:#e74c3c;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container" style="margin-top: 30px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #1b263b; font-size: 1.1rem;"><i class="fa-regular fa-calendar-days"></i> Lịch
+                            Làm Việc Tuần Này</h3>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <a href="{{ url_for('bao_cao.bao_cao_danh_sach', week_date=prev_week) }}" class="btn-add"
+                                style="background-color: #6c757d; border: none;"><i
+                                    class="fa-solid fa-chevron-left"></i> Tuần trước</a>
+
+                            <input type="date" value="{{ start_of_week }}"
+                                style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; outline: none;"
+                                onchange="window.location.href='{{ url_for('bao_cao.bao_cao_danh_sach') }}?week_date=' + this.value"
+                                title="Chọn một ngày bất kỳ để xem lịch tuần đó">
+
+                            <a href="{{ url_for('bao_cao.bao_cao_danh_sach', week_date=next_week) }}" class="btn-add"
+                                style="background-color: #6c757d; border: none;">Tuần sau <i
+                                    class="fa-solid fa-chevron-right"></i></a>
+                        </div>
+                    </div>
+
+                    <table class="schedule-grid">
+                        <thead>
+                            <tr>
+                                <th style="width: 200px;">Nhân Viên</th>
+                                {% for d in dates_of_week %}
+                                <th>Thứ {{ loop.index + 1 if loop.index < 6 else ('Bảy' if loop.index==6 else 'CN' )
+                                        }}<br><small>{{ d.strftime('%d/%m') }}</small></th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ma_nv, info in lich_nhan_vien.items() %}
+                            <tr>
+                                <td class="nv-info">{{ info.HoTen }} <span class="chuc-vu">{{ info.ChucVu }}</span></td>
+                                {% for d in dates_of_week %}
+                                {% if d in info.Lich %}
+                                <td
+                                    class="{% if info.Lich[d].status == 'da_lam' %}status-da-lam{% else %}status-co-lich{% endif %}">
+                                    {{ info.Lich[d].tg }}
+                                </td>
+                                {% else %}
+                                <td class="status-nghi">-</td>
+                                {% endif %}
+                                {% endfor %}
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 20px; color: #666;">Chưa có dữ liệu
+                                    lịch làm việc cho tuần này.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+</body>
+
+</html>

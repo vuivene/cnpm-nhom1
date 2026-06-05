@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thao tác Vật tư</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal-error-list {
+            text-align: left !important;
+            margin-top: 15px;
+            padding-left: 20px;
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.6;
+        }
+        .swal-error-list li {
+            list-style-type: disc !important;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('bang_quan_tri') }}"><i class="fa-solid fa-chart-pie"></i> Tổng quan</a></li>
+                <li><a href="{{ url_for('nhan_vien.danh_sach') }}"><i class="fa-solid fa-user-group"></i> Nhân sự</a></li>
+                <li><a href="{{ url_for('benh_nhan.danh_sach') }}"><i class="fa-solid fa-users"></i> Bệnh nhân & Bệnh án</a></li>
+                <li><a href="{{ url_for('dich_vu.danh_sach') }}"><i class="fa-solid fa-clipboard-list"></i> Dịch vụ</a></li>
+                <li><a href="{{ url_for('vat_tu.danh_sach') }}"><i class="fa-solid fa-box"></i> Vật tư</a></li>
+                <li><a href="{{ url_for('lich_lam_viec.danh_sach') }}"><i class="fa-regular fa-calendar-days"></i> Lịch làm việc</a></li>
+                <li><a href="{{ url_for('lich_hen.danh_sach') }}"><i class="fa-regular fa-calendar-check"></i> Lịch hẹn khám</a></li>
+                <li><a href="{{ url_for('hoa_don.danh_sach') }}"><i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn</a></li>
+                <li><a href="{{ url_for('bao_cao.bao_cao_danh_sach') }}"><i class="fa-solid fa-chart-line"></i> Báo cáo & Thống kê</a></li>
+                <li><a href="{{ url_for('cai_dat.index') }}"><i class="fa-solid fa-gear"></i> Cài đặt</a></li>
+            </ul>
+            <div class="sidebar-bottom">
+                <a href="mailto:someone@example.com"><i class="fa-regular fa-circle-question"></i> Hỗ trợ</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-header">
+                <h2>
+                    {% if action == 'add' %}<i class="fa-solid fa-box"></i> NHẬP VẬT TƯ MỚI
+                    {% elif action == 'edit' %}<i class="fa-solid fa-pen-to-square"></i> CẬP NHẬT THÔNG TIN VẬT TƯ
+                    {% else %}<i class="fa-solid fa-eye"></i> CHI TIẾT VẬT TƯ KHO
+                    {% endif %}
+                </h2>
+                <a href="{{ url_for('cai_dat.index') }}" style="text-decoration: none; color: #1b263b;">
+                    <div class="user-profile">
+                        {{ session['role'] }} <i class="fa-solid fa-circle-user" style="font-size: 1.2rem; margin-left: 5px;"></i>
+                    </div>
+                </a>
+            </div>
+
+            <div class="content-body">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <span class="filter-pill"><a href="{{ url_for('vat_tu.danh_sach') }}" style="color: #444;"><i class="fa-solid fa-arrow-left"></i> Quay lại</a></span>
+                        <span class="filter-pill active"><a href="#">Thông tin</a></span>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                {% for msg in messages %}
+                <script>
+                    Swal.fire({
+                        icon: "error",
+                        title: "Không thể lưu dữ liệu",
+                        text: "{{ msg }}",
+                        confirmButtonColor: '#1b263b',
+                        confirmButtonText: 'Tôi đã hiểu'
+                    });
+                </script>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <div class="form-container" style="margin-bottom: 20px;">
+                    <form id="vatTuForm" action="{{ url_for('vat_tu.save_vat_tu') }}" method="POST">
+                        <input type="hidden" name="action" value="{{ action }}">
+                        <input type="hidden" name="ma_goc" id="ma_goc" value="{{ data.MaVT if data else '' }}">
+                        {% if data %}
+                            <input type="hidden" name="ma_vt" id="ma_vt" value="{{ data.MaVT }}">
+                        {% endif %}
+
+                        <h3 style="margin-bottom: 20px; color: #444; font-size: 1.1rem;">THÔNG TIN VẬT TƯ & THUỐC</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mã vật tư / thuốc</label>
+                                <input type="text" id="ma_vt_display" value="{{ data.MaVT if data else 'Mã tự phát sinh!' }}" style="color: red; font-weight: 600;" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên vật tư / thuốc *</label>
+                                <input type="text" name="ten_vt" id="ten_vt" value="{{ data.TenVatTu if data else '' }}" placeholder="Nhập tên vật tư hoặc tên thuốc..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label>Phân loại nhóm *</label>
+                                <select name="loai" id="loai_select" {% if action == 'view' %}disabled{% endif %} onchange="handleLoaiChange()">
+                                    <option value="Dụng cụ tiêu hao" {% if data and data.Loai == 'Dụng cụ tiêu hao' %}selected{% endif %}>Dụng cụ tiêu hao</option>
+                                    <option value="Thuốc" {% if data and data.Loai == 'Thuốc' %}selected{% endif %}>Thuốc</option>
+                                </select>
+                                <input type="hidden" name="loai_goc" id="loai_goc" value="{{ data.Loai if data else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Số lượng tồn kho *</label>
+                                <input type="number" name="so_luong" id="so_luong" value="{{ data.SoLuongTon if data else '' }}" placeholder="Nhập số lượng tồn hiện tại..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label>Đơn vị tính *</label>
+                                <input type="text" name="don_vi" id="don_vi" value="{{ data.DonViTinh if data else '' }}" placeholder="Nhập đơn vị (Hộp, Chai, Viên...)" {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label>Đơn giá nhập / bán (VNĐ) *</label>
+                                <input type="number" step="0.01" name="don_gia" id="don_gia" value="{{ data.DonGia if data else '' }}" placeholder="Nhập đơn giá..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                        </div>
+
+                        <div class="form-row" id="dung_cu_fields">
+                            <div class="form-group">
+                                <label>Nhà cung cấp *</label>
+                                <input type="text" name="ncc" id="ncc" value="{{ data.NhaCungCap if data else '' }}" placeholder="Nhập đơn vị nhà cung cấp..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                            <div class="form-group">
+                                <label>Ngưỡng cảnh báo tối thiểu *</label>
+                                <input type="number" name="nguong" id="nguong" value="{{ data.NguongCanhBao if data else '10' }}" placeholder="Nhập ngưỡng cảnh báo tồn..." {% if action == 'view' %}readonly{% endif %}>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            {% if action == 'add' %}
+                                <button type="submit" class="btn-submit" style="background-color: #2ecc71;">Thêm vật tư</button>
+                            {% elif action == 'edit' %}
+                                <button type="submit" class="btn-submit" style="background-color: #3498db;">Lưu thông tin</button>
+                            {% elif action == 'view' %}
+                                <a href="{{ url_for('vat_tu.form_vat_tu', action='edit', id=data.MaVT) }}" class="btn-submit" style="background-color: #e67e22; text-decoration: none; display: inline-block; text-align: center; padding: 10px 20px; color: white; border-radius: 4px;">Bạn có muốn sửa?</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Xử lý thay đổi nhãn hiển thị mã tạm thời khi đổi phân loại
+        function handleLoaiChange() {
+            var action = "{{ action }}";
+            if (action !== 'edit') return;
+            
+            var currentLoai = document.getElementById('loai_select').value;
+            var loaiGoc = document.getElementById('loai_goc').value;
+            var displayInput = document.getElementById('ma_vt_display');
+            var maGoc = document.getElementById('ma_goc').value;
+
+            if (currentLoai !== loaiGoc) {
+                displayInput.value = "Sẽ đổi sang mã mới!";
+                displayInput.style.color = "#e67e22";
+            } else {
+                displayInput.value = maGoc;
+                displayInput.style.color = "red";
+            }
+        }
+
+        document.getElementById('vatTuForm').addEventListener('submit', function (e) {
+            var tenVT = document.getElementById('ten_vt').value.trim();
+            var soLuong = document.getElementById('so_luong').value.trim();
+            var donVi = document.getElementById('don_vi').value.trim();
+            var donGia = document.getElementById('don_gia').value.trim();
+            var ncc = document.getElementById('ncc').value.trim();
+            var nguong = document.getElementById('nguong').value.trim();
+
+            var errors = [];
+
+            if (tenVT === "") errors.push("Tên vật tư / thuốc không được phép để trống.");
+            if (donVi === "") errors.push("Đơn vị tính không được phép để trống.");
+            if (ncc === "") errors.push("Thông tin nhà cung cấp không được phép để trống.");
+
+            if (soLuong === "") {
+                errors.push("Số lượng tồn kho không được phép để trống.");
+            } else {
+                var slNum = parseInt(soLuong);
+                if (isNaN(slNum) || slNum < 0) errors.push("Số lượng tồn kho phải là số nguyên lớn hơn hoặc bằng 0.");
+            }
+
+            if (donGia === "") {
+                errors.push("Đơn giá nhập / bán không được phép để trống.");
+            } else {
+                var dgNum = parseFloat(donGia);
+                if (isNaN(dgNum) || dgNum < 0) errors.push("Đơn giá nhập / bán không được phép là số âm.");
+            }
+
+            if (nguong === "") {
+                errors.push("Ngưỡng cảnh báo tối thiểu không được phép để trống.");
+            } else {
+                var ngNum = parseInt(nguong);
+                if (isNaN(ngNum) || ngNum < 0) errors.push("Ngưỡng cảnh báo tối thiểu phải là số lớn hơn hoặc bằng 0.");
+            }
+
+            if (errors.length > 0) {
+                e.preventDefault();
+
+                var errorHtml = '<ul class="swal-error-list">';
+                errors.forEach(function (err) {
+                    errorHtml += '<li>' + err + '</li>';
+                });
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Vui lòng kiểm tra lại thông tin',
+                    html: errorHtml,
+                    confirmButtonColor: '#1b263b',
+                    confirmButtonText: 'Tôi đã hiểu'
+                });
+                return false;
+            }
+            return true;
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+</body>
+</html>
