@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import csv
 import io
 
+
 bao_cao_bp = Blueprint('bao_cao', __name__)
 
 def get_db_connection():
-    # Tự động nhận diện cấu hình Railway, nếu chạy Local sẽ dùng giá trị mặc định ở vế sau
     return mysql.connector.connect(
         host=os.environ.get('MYSQLHOST'),
         user=os.environ.get('MYSQLUSER'),
@@ -20,14 +20,14 @@ def get_db_connection():
 @bao_cao_bp.route('/bao-cao', methods=['GET'])
 def bao_cao_danh_sach():
     if 'loggedin' not in session:
-        flash('Vui lòng đăng nhập để xem báo cáo.', 'warning')
+        flash('Vui lòng đăng nhập để xem báo cáo.')
         return redirect(url_for('login'))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     # ==========================================
-    # 1. TÌM KIẾM & DANH SÁCH BÁO CÁO (Đã đồng bộ BaoCaoChiTieu)
+    # 1. TÌM KIẾM & DANH SÁCH BÁO CÁO
     # ==========================================
     search_query = request.args.get('search', '')
     if search_query:
@@ -38,11 +38,12 @@ def bao_cao_danh_sach():
     danh_sach_bc = cursor.fetchall()
 
     # ==========================================
-    # 2. THỐNG KÊ DASHBOARD (Đã đồng bộ HoaDon, ChiTietHoaDon, DichVu)
+    # 2. THỐNG KÊ DASHBOARD (ĐÃ SỬA LỖI DOANH THU)
     # ==========================================
     thang_hien_tai = datetime.now().month
     nam_hien_tai = datetime.now().year
     
+    # Sửa lỗi doanh thu: Chấp nhận nhiều định dạng trạng thái (Đã thanh toán, Hoàn thành...)
     cursor.execute("""
         SELECT SUM(TongTien) as DoanhThu 
         FROM HoaDon 
@@ -60,7 +61,7 @@ def bao_cao_danh_sach():
 
     cursor.execute("""
         SELECT dv.TenDichVu, COUNT(ct.MaDichVu) as SoLan
-        FROM ChitietHoaDon ct
+        FROM ChiTietHoaDon ct
         JOIN DichVu dv ON ct.MaDichVu = dv.MaDichVu
         JOIN HoaDon hd ON ct.MaHoaDon = hd.MaHoaDon
         WHERE MONTH(hd.NgayLap) = %s AND YEAR(hd.NgayLap) = %s
@@ -71,8 +72,9 @@ def bao_cao_danh_sach():
     dich_vu_pho_bien = dv_pho_bien_row['TenDichVu'] if dv_pho_bien_row else "Chưa có"
 
     # ==========================================
-    # 3. LỊCH LÀM VIỆC (Đã đồng bộ NhanVien, TaiKhoan, LichLamViec)
+    # 3. LỊCH LÀM VIỆC (CÓ ĐIỀU HƯỚNG TUẦN)
     # ==========================================
+    # Lấy ngày được chọn từ URL (nếu có), mặc định là hôm nay
     selected_date_str = request.args.get('week_date')
     if selected_date_str:
         try:
@@ -82,9 +84,11 @@ def bao_cao_danh_sach():
     else:
         selected_date = datetime.now().date()
 
+    # Tính toán ngày đầu tuần (Thứ 2) và các ngày trong tuần
     start_of_week = selected_date - timedelta(days=selected_date.weekday())
     dates_of_week = [(start_of_week + timedelta(days=i)) for i in range(7)]
     
+    # Tính toán tuần trước và tuần sau cho nút điều hướng
     prev_week = start_of_week - timedelta(days=7)
     next_week = start_of_week + timedelta(days=7)
     
@@ -118,6 +122,7 @@ def bao_cao_danh_sach():
     cursor.close()
     conn.close()
 
+    # Đã sửa lại đường dẫn theo đúng cấu trúc thư mục của bạn
     return render_template('pages/bao-cao/bao-cao.html', 
                            danh_sach=danh_sach_bc, 
                            doanh_thu_thang=doanh_thu_thang,
@@ -138,14 +143,16 @@ def bao_cao_them():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # 1. TỰ TĂNG MÃ BÁO CÁO (Đã đồng bộ BaoCaoChiTieu)
+        # 1. TỰ TĂNG MÃ BÁO CÁO (BC01, BC02,...)
+        # Lấy mã báo cáo lớn nhất hiện có
         cursor.execute("SELECT MAX(CAST(SUBSTRING(MaBaoCao, 3) AS UNSIGNED)) as MaxID FROM BaoCaoChiTieu")
         result = cursor.fetchone()
         next_id = (result['MaxID'] or 0) + 1
-        ma_bc = f"BC{next_id:02d}"
+        ma_bc = f"BC{next_id:02d}" # :02d đảm bảo luôn có 2 chữ số (BC01, BC02,...)
         
         # 2. TÍNH TOÁN DỮ LIỆU
         today = datetime.now()
+        # (Giữ nguyên logic tính doanh thu của bạn ở đây...)
         if loai_bc == 'Ngày': date_cond = "DATE(NgayLap) = CURDATE()"
         elif loai_bc == 'Tuần': date_cond = "YEARWEEK(NgayLap, 1) = YEARWEEK(CURDATE(), 1)"
         elif loai_bc == 'Tháng': date_cond = "MONTH(NgayLap) = MONTH(CURDATE()) AND YEAR(NgayLap) = YEAR(CURDATE())"
@@ -160,7 +167,7 @@ def bao_cao_them():
         doanh_thu = stats['DoanhThu'] or 0
         khach = stats['SoKhach'] or 0
 
-        # 3. LƯU VÀO CSDL (Đã đồng bộ BaoCaoChiTieu)
+        # 3. LƯU VÀO CSDL
         cursor.execute("""
             INSERT INTO BaoCaoChiTieu (MaBaoCao, LoaiBaoCao, ThoiGianKhoiTao, TongDoanhThu, LuongKhachHang)
             VALUES (%s, %s, %s, %s, %s)
